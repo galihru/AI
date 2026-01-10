@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.log
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.bak
+.env
+
+# Large training files (download separately)
+data/corpus.txt
+data/dataset.bin
+data/index.json
+models/latest/model.pt
+out/

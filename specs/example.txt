@@ -1,0 +1,3 @@
+Create a simple LED blink program for Arduino UNO.
+The LED should blink every 1 second.
+Use pin 13 for the LED.

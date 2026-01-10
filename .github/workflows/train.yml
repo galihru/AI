@@ -1,0 +1,95 @@
+name: Autonomous AI Training
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      target_loss:
+        description: 'Target loss to achieve'
+        required: false
+        default: '0.5'
+  
+  # Auto-trigger when model is pushed
+  push:
+    paths:
+      - 'models/**'
+      - '.github/workflows/train.yml'
+  
+  # Schedule: Run every 6 hours
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330  # 5.5 hours max
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        lfs: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install tokenizers torch numpy tqdm scikit-learn
+    
+    - name: Download training data (if not cached)
+      run: |
+        if [ ! -f "data/dataset.bin" ]; then
+          echo "Dataset not found, you need to upload it first"
+          # You can download from cloud storage here
+        fi
+    
+    - name: Check GPU availability
+      run: |
+        python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+    
+    - name: Resume training
+      run: |
+        cd ArduScratch
+        python scripts/autonomous_trainer.py
+      env:
+        TARGET_LOSS: ${{ github.event.inputs.target_loss || '0.5' }}
+    
+    - name: Commit updated model
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add models/
+        git diff-index --quiet HEAD || git commit -m "Auto-training: Updated model [skip ci]"
+        git push
+      continue-on-error: true
+    
+    - name: Upload model artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: trained-model
+        path: models/latest/
+        retention-days: 30
+    
+    - name: Check if target reached
+      id: check_target
+      run: |
+        BEST_LOSS=$(python -c "import json; print(json.load(open('models/latest/metadata.json'))['best_loss'])")
+        echo "best_loss=$BEST_LOSS" >> $GITHUB_OUTPUT
+        if (( $(echo "$BEST_LOSS < 0.5" | bc -l) )); then
+          echo "🎉 Target loss reached!"
+        else
+          echo "Continue training needed"
+        fi
+    
+    - name: Trigger next training session
+      if: steps.check_target.outputs.best_loss > 0.5
+      uses: peter-evans/repository-dispatch@v2
+      with:
+        event-type: continue-training
+        token: ${{ secrets.GITHUB_TOKEN }}
