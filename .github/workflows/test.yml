@@ -1,0 +1,21 @@
+name: Simple Test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo test
+        run: echo "Hello from GitHub Actions!"
+      
+      - name: Check environment
+        run: |
+          echo "Runner OS: $RUNNER_OS"
+          echo "Workflow: $GITHUB_WORKFLOW"
