@@ -40,25 +40,25 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           mkdir -p ArduScratch/data
-          python3 << 'PYTHON_SCRIPT'
-from huggingface_hub import hf_hub_download
-print('Downloading dataset...')
-hf_hub_download(
-    repo_id='g4lihru/arduino-dataset',
-    filename='dataset.bin',
-    repo_type='dataset',
-    local_dir='ArduScratch/data',
-    local_dir_use_symlinks=False
-)
-hf_hub_download(
-    repo_id='g4lihru/arduino-dataset',
-    filename='tokenizer/tokenizer.json',
-    repo_type='dataset',
-    local_dir='ArduScratch/data',
-    local_dir_use_symlinks=False
-)
-print('Download complete!')
-PYTHON_SCRIPT
+          python3 -c "
+          from huggingface_hub import hf_hub_download
+          print('Downloading dataset...')
+          hf_hub_download(
+              repo_id='g4lihru/arduino-dataset',
+              filename='dataset.bin',
+              repo_type='dataset',
+              local_dir='ArduScratch/data',
+              local_dir_use_symlinks=False
+          )
+          hf_hub_download(
+              repo_id='g4lihru/arduino-dataset',
+              filename='tokenizer/tokenizer.json',
+              repo_type='dataset',
+              local_dir='ArduScratch/data',
+              local_dir_use_symlinks=False
+          )
+          print('Download complete!')
+          "
           ls -lh ArduScratch/data/
       
       - name: Run training
