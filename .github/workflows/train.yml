@@ -31,12 +31,12 @@ jobs:
           pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
           pip install tokenizers tqdm scikit-learn matplotlib huggingface_hub
       
-      - name: Download dataset from HF
+      - name: Download dataset
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           mkdir -p ArduScratch/data
-          python -c \"
+          python3 << 'PYTHON_SCRIPT'
 from huggingface_hub import hf_hub_download
 print('Downloading dataset...')
 hf_hub_download(
@@ -54,20 +54,20 @@ hf_hub_download(
     local_dir_use_symlinks=False
 )
 print('Download complete!')
-          \"
+PYTHON_SCRIPT
           ls -lh ArduScratch/data/
       
       - name: Run training
         run: |
           cd ArduScratch
-          python scripts/autonomous_trainer.py
+          python3 scripts/autonomous_trainer.py
       
       - name: Commit results
         run: |
-          git config --global user.name \"AI Trainer Bot\"
-          git config --global user.email \"g4lihru@students.unnes.ac.id\"
+          git config --global user.name "AI Trainer Bot"
+          git config --global user.email "g4lihru@students.unnes.ac.id"
           git add ArduScratch/models/
-          git diff --quiet && git diff --staged --quiet || git commit -m \"Auto-training: $(date '+%Y-%m-%d %H:%M:%S')\"
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-training: $(date '+%Y-%m-%d %H:%M:%S')"
           git push
       
       - name: Upload artifacts
