@@ -1,0 +1,81 @@
+name: Autonomous AI Training
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hours max
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install tokenizers tqdm scikit-learn matplotlib huggingface_hub
+      
+      - name: Download dataset from Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          mkdir -p ArduScratch/data ArduScratch/tokenizer
+          echo "Downloading dataset from Hugging Face..."
+          python -c "
+from huggingface_hub import hf_hub_download
+import os
+os.environ['HF_TOKEN'] = '$HF_TOKEN'
+print('Downloading dataset.bin...')
+hf_hub_download(
+    repo_id='g4lihru/arduino-dataset',
+    filename='dataset.bin',
+    repo_type='dataset',
+    local_dir='ArduScratch/data',
+    local_dir_use_symlinks=False
+)
+print('Downloading tokenizer...')
+hf_hub_download(
+    repo_id='g4lihru/arduino-dataset',
+    filename='tokenizer/tokenizer.json',
+    repo_type='dataset',
+    local_dir='ArduScratch/data',
+    local_dir_use_symlinks=False
+)
+print('✅ Download complete!')
+          "
+          ls -lh ArduScratch/data/
+      
+      - name: Run autonomous training
+        run: |
+          cd ArduScratch
+          python scripts/autonomous_trainer.py
+      
+      - name: Commit and push results
+        run: |
+          git config --global user.name "AI Trainer Bot"
+          git config --global user.email "g4lihru@students.unnes.ac.id"
+          git add ArduScratch/models/
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-training: $(date '+%Y-%m-%d %H:%M:%S')"
+          git push
+      
+      - name: Upload training artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-checkpoint-${{ github.run_number }}
+          path: |
+            ArduScratch/models/latest/
+          retention-days: 30
