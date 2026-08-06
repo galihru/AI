@@ -1,8 +1,8 @@
 {
-  "total_steps": 18614,
-  "current_loss": 0.6406368017196655,
-  "best_loss": 0.6406368017196655,
-  "timestamp": "2026-08-05T21:09:59.868747",
+  "total_steps": 18913,
+  "current_loss": 0.42551636695861816,
+  "best_loss": 0.42551636695861816,
+  "timestamp": "2026-08-06T01:02:26.021787",
   "device": "cpu",
-  "training_hours": 5.000224151213964
+  "training_hours": 3.852952445480559
 }
